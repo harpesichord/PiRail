@@ -18,7 +18,7 @@ class Settings:
         self.edit_interval = Button('edit.png', (265,60), "EDIT_INTERVAL")
         self.edit_wait = Button('edit.png', (265,115), "EDIT_WAIT")
         self.go_back = Button('go_back.png', (5,185), "GO_BACK")
-        self.next = Button('left.png', (265,185), "NEXT_PAGE")
+        self.next = Button('right.png', (265,185), "NEXT_PAGE")
         
         # PAGE 2 buttons
         self.night_mode = Button('edit.png', (265,5), "NIGHT_MODE")
