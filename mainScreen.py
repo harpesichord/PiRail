@@ -16,9 +16,10 @@ class MainScreen:
     
     def __init__(self):
         global SHOT_NUMBER
-        self.shots = 20
-        self.interval = 100 # in ms time the rig moves
-        self.wait = 3000 # in ms between moving and taking picture
+        self.shots = 100
+        self.interval = 500 # in ms time the rig moves
+        self.wait = 1000 # in ms between moving and taking picture
+        self.direction = 1
         
         self.myfont = pygame.font.SysFont("monospace", 25)
         
@@ -38,10 +39,10 @@ class MainScreen:
         buttonClicked = [sprite for sprite in self.buttons if sprite.rect.collidepoint(x, y)]
         if (len(buttonClicked) > 0):
             if (buttonClicked[0].clicked() == "SETTINGS" and not RUNNING):
-                return Settings(self.shots, self.interval, self.wait, self)
+                return Settings(self.shots, self.interval, self.wait, self.direction, self)
             if (buttonClicked[0].clicked() == "START"):
                 RUNNING = 1
-                self.pictures = Pictures(self.shots, self.interval, self.wait)
+                self.pictures = Pictures(self.shots, self.interval, self.wait, self.direction)
                 self.pictures.start()
             if (buttonClicked[0].clicked() == "STOP"):
                 GRID_LOCK.acquire()
@@ -65,11 +66,11 @@ class MainScreen:
         
         
         
-        TIME_REMAINING = (self.shots - SHOT_NUMBER) * ((self.wait / 1000) + (self.interval / 1000))
+        TIME_REMAINING = int((self.shots - SHOT_NUMBER) * ((self.wait / 1000) + (self.interval / 1000)))
         
-        self.moving_label = self.myfont.render("Moving:    " + str(self.interval) + "ms", 1, (0,0,0))
-        self.wait_label = self.myfont.render(  "Sleep:     " + str(self.wait) + "ms", 1, (0,0,0))
-        self.shots_label = self.myfont.render( "Frames:    " + str(SHOT_NUMBER) + " of " + str(self.shots), 1, (0,0,0))
+        self.moving_label = self.myfont.render("Moving: " + str(self.interval) + "ms", 1, (0,0,0))
+        self.wait_label = self.myfont.render(  "Sleep:  " + str(self.wait) + "ms", 1, (0,0,0))
+        self.shots_label = self.myfont.render( "Frames: " + str(SHOT_NUMBER) + " of " + str(self.shots), 1, (0,0,0))
         self.time_label = self.myfont.render(  "Remaining: " + str(datetime.timedelta(seconds=TIME_REMAINING)), 1, (0,0,0))
         
         #GRID_LOCK.release()
@@ -85,11 +86,12 @@ class MainScreen:
         
 class Pictures(threading.Thread):
 
-    def __init__(self, shots, interval, wait):
+    def __init__(self, shots, interval, wait, direction):
         threading.Thread.__init__(self)
         self.shots = shots
         self.interval = interval
         self.wait = wait
+        self.direction = direction
         
     def run(self):
         global RUNNING, SHOT_NUMBER, GRID_LOCK, TIME_REMAINING
@@ -102,13 +104,16 @@ class Pictures(threading.Thread):
                 
             # Take Picture
                 
-            # Wait
-            time.sleep(self.wait / 1000)
-            
+                
             # Moving
             # Start Moving
             time.sleep(self.interval / 1000)
             # Stop Moving
+            
+            # Wait
+            time.sleep(self.wait / 1000)
+            
+            
             
             
             SHOT_NUMBER += 1
