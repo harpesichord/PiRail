@@ -1,15 +1,19 @@
 #! /bin/python
 
 import pygame, signal, sys
+#inport GPIO
 from datetime import datetime
 from mainScreen import MainScreen
 
 
+pins = {"GROUND":15, #WHITE
+        "FOCUS":11, #YELLOW
+        "SHUTTER":13} #RED
 
 pygame.font.init()
 screen = pygame.display.set_mode((320, 240), pygame.SRCALPHA)
 runs = 1
-main = MainScreen()
+main = MainScreen(pins)
 currentScreen = main
 
 clock = pygame.time.Clock()
@@ -17,10 +21,19 @@ clock = pygame.time.Clock()
 def signal_handler(signal, frame):
     global currentScreen, runs
     runs = 0
+    #GPIO.cleanup()
     currentScreen.stops()
     sys.exit(0)
 
+def gpio_init():
+    pass
+    #GPIO.setmode(GPIO.BOARD)
+    #GPIO.setup(pins["FOCUS"], GPIO.OUT)
+    #GPIO.setup(pins["SHUTTER"], GPIO.OUT)
+    #GPIO.setup(pins["GROUND"], GPIO.OUT)
+    
 signal.signal(signal.SIGINT, signal_handler)
+gpio_init()
 
 while runs:
     clock.tick(60)
@@ -45,6 +58,6 @@ while runs:
               
     
     
-    
+#GPIO.cleanup()    
 print("DONE")
 pygame.quit()

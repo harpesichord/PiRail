@@ -73,6 +73,7 @@ class Settings:
         self.previous_screen.shots = self.shots
         self.previous_screen.interval = self.interval
         self.previous_screen.wait = self.wait
+        self.previous_screen.direction = self.direction
     
     def update(self):
         self.allsprites.update()

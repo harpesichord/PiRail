@@ -1,6 +1,7 @@
 #! /bin/python
 
 import pygame, time, datetime
+#inport GPIO
 from button import Button
 from settings import Settings
 import threading
@@ -9,13 +10,17 @@ GRID_LOCK = threading.Lock()
 RUNNING = 0
 SHOT_NUMBER = 0
 TIME_REMAINING = 0
+SHUTTER_WAIT = 200
+PINS = {}    
     
 class MainScreen:
     pygame.font.init()
 
     
-    def __init__(self):
-        global SHOT_NUMBER
+    def __init__(self, pins_dic):
+        global SHOT_NUMBER, PINS
+        
+        pins = pins_dic
         self.shots = 100
         self.interval = 500 # in ms time the rig moves
         self.wait = 1000 # in ms between moving and taking picture
@@ -60,13 +65,13 @@ class MainScreen:
 
         
     def update(self):
-        global SHOT_NUMBER, TIME_REMAINING
+        global SHOT_NUMBER, TIME_REMAINING, SHUTTER_WAIT
         #GRID_LOCK.acquire()
         self.allsprites.update()
         
         
         
-        TIME_REMAINING = int((self.shots - SHOT_NUMBER) * ((self.wait / 1000) + (self.interval / 1000)))
+        TIME_REMAINING = int((self.shots - SHOT_NUMBER) * ((self.wait / 1000) + (SHUTTER_WAIT / 1000) + (self.interval / 1000)))
         
         self.moving_label = self.myfont.render("Moving: " + str(self.interval) + "ms", 1, (0,0,0))
         self.wait_label = self.myfont.render(  "Sleep:  " + str(self.wait) + "ms", 1, (0,0,0))
@@ -94,7 +99,7 @@ class Pictures(threading.Thread):
         self.direction = direction
         
     def run(self):
-        global RUNNING, SHOT_NUMBER, GRID_LOCK, TIME_REMAINING
+        global RUNNING, SHOT_NUMBER, GRID_LOCK, TIME_REMAINING, PINS, SHUTTER_WAIT
         
         while True:
             GRID_LOCK.acquire()
@@ -102,13 +107,20 @@ class Pictures(threading.Thread):
                 GRID_LOCK.release()
                 return
                 
-            # Take Picture
-                
                 
             # Moving
             # Start Moving
             time.sleep(self.interval / 1000)
             # Stop Moving
+            
+            # Take Picture
+            #GPIO.output(pins["GROUND"],True)
+            #GPIO.output(pins["FOCUS"],True)
+            #GPIO.output(pins["SHUTTER"],True)
+            time.sleep(SHUTTER_WAIT / 1000)
+            #GPIO.output(pins["SHUTTER"],False)
+            #GPIO.output(pins["FOCUS"],False)
+            #GPIO.output(pins["GROUND"],False)
             
             # Wait
             time.sleep(self.wait / 1000)
