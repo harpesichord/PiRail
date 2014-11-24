@@ -141,10 +141,10 @@ class Edit:
             self.allsprites = pygame.sprite.RenderPlain(self.buttons)
             
         if (self.type == "MOVE_PLATFORM"):
-            self.rewind = Button('rewind.png', (32,60), "REWIND")
-            self.fastforward = Button('fastforward.png', (142,60), "FAST_FORWARD")
-            self.left = Button('left.png', (32,115), "MOVE_LEFT")
-            self.right = Button('right.png', (142,115), "MOVE_RIGHT")
+            self.rewind = Button('rewind.png', (80,37), "REWIND")
+            self.fastforward = Button('fastforward.png', (190,37), "FAST_FORWARD")
+            self.left = Button('left.png', (80,92), "MOVE_LEFT")
+            self.right = Button('right.png', (190,92), "MOVE_RIGHT")
             self.cancel = Button('enter.png', (5,185), "CANCEL")
             self.stop = Button('stop.png', (110,185), "STOP")
             
@@ -208,4 +208,9 @@ class Edit:
         
         if (self.type == "EDIT_SHOTS" or self.type == "EDIT_INTERVAL" or self.type == "EDIT_WAIT"):
             screen.blit(self.value_label, (5, 10))
+        if (self.type == "DIRECTION"):
+            if (self.value == 0):
+                pygame.draw.rect(screen, (0,0,0), pygame.Rect((58,25), (80, 130)), 5)
+            elif (self.value == 1):
+                pygame.draw.rect(screen, (0,0,0), pygame.Rect((182,25), (80, 130)), 5)
         
