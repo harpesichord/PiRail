@@ -1,10 +1,10 @@
 #! /bin/python
 
 import pygame, time, datetime
-#inport GPIO
+#import RPi.GPIO as GPIO
 from button import Button
 from settings import Settings
-import threading
+import threading, os
 
 GRID_LOCK = threading.Lock()
 RUNNING = 0
@@ -71,7 +71,7 @@ class MainScreen:
         
         
         
-        TIME_REMAINING = int((self.shots - SHOT_NUMBER) * ((self.wait / 1000) + (SHUTTER_WAIT / 1000) + (self.interval / 1000)))
+        TIME_REMAINING = int(((self.shots - SHOT_NUMBER) * ((self.wait) + (SHUTTER_WAIT) + (self.interval))) / 1000)
         
         self.moving_label = self.myfont.render("Moving: " + str(self.interval) + "ms", 1, (0,0,0))
         self.wait_label = self.myfont.render(  "Sleep:  " + str(self.wait) + "ms", 1, (0,0,0))
@@ -114,13 +114,8 @@ class Pictures(threading.Thread):
             # Stop Moving
             
             # Take Picture
-            #GPIO.output(pins["GROUND"],True)
-            #GPIO.output(pins["FOCUS"],True)
-            #GPIO.output(pins["SHUTTER"],True)
-            time.sleep(SHUTTER_WAIT / 1000)
-            #GPIO.output(pins["SHUTTER"],False)
-            #GPIO.output(pins["FOCUS"],False)
-            #GPIO.output(pins["GROUND"],False)
+            #os.system('python take_picture.py ' + str(pins["GROUND"]) + ' ' + str(pins["FOCUS"]) + ' ' + str(pins["SHUTTER"]) + ' ' + str(SHUTTER_WAIT))
+            
             
             # Wait
             time.sleep(self.wait / 1000)

@@ -28,9 +28,7 @@ def signal_handler(signal, frame):
 def gpio_init():
     pass
     #GPIO.setmode(GPIO.BOARD)
-    #GPIO.setup(pins["FOCUS"], GPIO.OUT)
-    #GPIO.setup(pins["SHUTTER"], GPIO.OUT)
-    #GPIO.setup(pins["GROUND"], GPIO.OUT)
+    
     
 signal.signal(signal.SIGINT, signal_handler)
 gpio_init()
