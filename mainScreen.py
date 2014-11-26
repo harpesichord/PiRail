@@ -5,32 +5,19 @@ import pygame, time, datetime
 from button import Button
 from settings import Settings
 import threading, os
+import globals
 
 GRID_LOCK = threading.Lock()
 RUNNING = 0
-SHOT_NUMBER = 0
-TIME_REMAINING = 0
-SHUTTER_WAIT = 200
-PINS = {}    
+
+
     
 class MainScreen:
     pygame.font.init()
 
     
-    def __init__(self, pins_dic):
-        global SHOT_NUMBER, PINS
-        
-        pins = pins_dic
-        self.shots = 100
-        self.interval = 500 # in ms time the rig moves
-        self.wait = 1000 # in ms between moving and taking picture
-        self.direction = 1
-        
+    def __init__(self):
         self.myfont = pygame.font.SysFont("monospace", 25)
-        
-        #self.shots_label = self.myfont.render("Shots Remaining: " + str(SHOT_NUMBER) + " of " + str(self.shots), 1, (0,0,0))
-        #self.interval_label = self.myfont.render("Some text!", 1, (255,255,255))
-        #self.time_label = self.myfont.render("", 1, (255,255,255))
         
         self.start = Button('start.png', (5,185), "START")
         self.stop = Button('stop.png', (215,185), "STOP")
@@ -40,19 +27,19 @@ class MainScreen:
         self.allsprites = pygame.sprite.RenderPlain(self.buttons)
         
     def clicked(self, x, y):
-        global RUNNING, SHOT_NUMBER, GRID_LOCK
+        global RUNNING, GRID_LOCK
         buttonClicked = [sprite for sprite in self.buttons if sprite.rect.collidepoint(x, y)]
         if (len(buttonClicked) > 0):
             if (buttonClicked[0].clicked() == "SETTINGS" and not RUNNING):
-                return Settings(self.shots, self.interval, self.wait, self.direction, self)
+                globals.globs["screens"].append(Settings())
             if (buttonClicked[0].clicked() == "START"):
                 RUNNING = 1
-                self.pictures = Pictures(self.shots, self.interval, self.wait, self.direction)
+                self.pictures = Pictures()
                 self.pictures.start()
             if (buttonClicked[0].clicked() == "STOP"):
                 GRID_LOCK.acquire()
                 RUNNING = 0
-                SHOT_NUMBER = 0
+                globals.globs["SHOT_NUMBER"] = 0
                 GRID_LOCK.release()
                 
             print (buttonClicked[0].clicked())
@@ -65,18 +52,17 @@ class MainScreen:
 
         
     def update(self):
-        global SHOT_NUMBER, TIME_REMAINING, SHUTTER_WAIT
         #GRID_LOCK.acquire()
         self.allsprites.update()
         
         
         
-        TIME_REMAINING = int(((self.shots - SHOT_NUMBER) * ((self.wait) + (SHUTTER_WAIT) + (self.interval))) / 1000)
+        globals.globs["TIME_REMAINING"] = int(((globals.globs["shots"] - globals.globs["SHOT_NUMBER"]) * ((globals.globs["wait"]) + (globals.globs["SHUTTER_WAIT"]) + (globals.globs["interval"]))) / 1000)
         
-        self.moving_label = self.myfont.render("Moving: " + str(self.interval) + "ms", 1, (0,0,0))
-        self.wait_label = self.myfont.render(  "Sleep:  " + str(self.wait) + "ms", 1, (0,0,0))
-        self.shots_label = self.myfont.render( "Frames: " + str(SHOT_NUMBER) + " of " + str(self.shots), 1, (0,0,0))
-        self.time_label = self.myfont.render(  "Remaining: " + str(datetime.timedelta(seconds=TIME_REMAINING)), 1, (0,0,0))
+        self.moving_label = self.myfont.render("Moving: " + str(globals.globs["interval"]) + "ms", 1, (0,0,0))
+        self.wait_label = self.myfont.render(  "Sleep:  " + str(globals.globs["wait"]) + "ms", 1, (0,0,0))
+        self.shots_label = self.myfont.render( "Frames: " + str(globals.globs["SHOT_NUMBER"]) + " of " + str(globals.globs["shots"]), 1, (0,0,0))
+        self.time_label = self.myfont.render(  "Remaining: " + str(datetime.timedelta(seconds=globals.globs["TIME_REMAINING"])), 1, (0,0,0))
         
         #GRID_LOCK.release()
         
@@ -91,15 +77,12 @@ class MainScreen:
         
 class Pictures(threading.Thread):
 
-    def __init__(self, shots, interval, wait, direction):
+    def __init__(self):
         threading.Thread.__init__(self)
-        self.shots = shots
-        self.interval = interval
-        self.wait = wait
-        self.direction = direction
+        
         
     def run(self):
-        global RUNNING, SHOT_NUMBER, GRID_LOCK, TIME_REMAINING, PINS, SHUTTER_WAIT
+        global RUNNING, GRID_LOCK
         
         while True:
             GRID_LOCK.acquire()
@@ -109,23 +92,26 @@ class Pictures(threading.Thread):
                 
                 
             # Moving
-            # Start Moving
-            time.sleep(self.interval / 1000)
-            # Stop Moving
+            if ((globals.globs["direction"] == 0 and globals.globs["allow_motion"] <= 0) or (globals.globs["direction"] == 1 and globals.globs["allow_motion"] >= 0)):
+                # Start Moving
+                time.sleep(globals.globs["interval"] / 1000)
+                # Stop Moving
+            else:
+                time.sleep(globals.globs["interval"] / 1000)
             
             # Take Picture
-            #os.system('python take_picture.py ' + str(pins["GROUND"]) + ' ' + str(pins["FOCUS"]) + ' ' + str(pins["SHUTTER"]) + ' ' + str(SHUTTER_WAIT))
+            #os.system('python take_picture.py ' + str(globals.globs["camera_pins"]["GROUND"]) + ' ' + str(globals.globs["camera_pins"]["FOCUS"]) + ' ' + str(globals.globs["camera_pins"]["SHUTTER"]) + ' ' + str(globals.globs["SHUTTER_WAIT"]))
             
             
             # Wait
-            time.sleep(self.wait / 1000)
+            time.sleep(globals.globs["wait"] / 1000)
             
             
             
             
-            SHOT_NUMBER += 1
+            globals.globs["SHOT_NUMBER"] += 1
             
-            if (SHOT_NUMBER >= self.shots):
+            if (globals.globs["SHOT_NUMBER"] >= globals.globs["shots"]):
                 RUNNING = 0
             
             GRID_LOCK.release()

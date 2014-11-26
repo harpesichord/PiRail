@@ -2,19 +2,17 @@
 
 import pygame
 from button import Button
+import globals
+#import RPi.GPIO as GPIO
+import threading, os
 
 pygame.font.init()
 
 class Settings:
     running = 0
     
-    def __init__(self, shots, interval, wait, direction, previous_screen):
-        self.shots = shots
-        self.interval = interval # in ms
-        self.wait = wait # in ms
-        self.direction = direction
+    def __init__(self):
         self.myfont = pygame.font.SysFont("monospace", 25)
-        self.previous_screen = previous_screen
         
         # PAGE 1 buttons
         self.edit_shots = Button('edit.png', (265,5), "EDIT_SHOTS")
@@ -49,40 +47,33 @@ class Settings:
             if (buttonClicked[0].clicked() == "NEXT_PAGE"):
                 if (self.page == 1):
                     self.page_2()
-            if (buttonClicked[0].clicked() == "PREVIOUS_PAGE"):
+            elif (buttonClicked[0].clicked() == "PREVIOUS_PAGE"):
                 if (self.page == 2):
                     self.page_1()
-            if (buttonClicked[0].clicked() == "GO_BACK"):
-                self.goBack()
-                return self.previous_screen
-            if (buttonClicked[0].clicked() == "EDIT_SHOTS"):
-                return Edit("EDIT_SHOTS", self.shots, self)
-            if (buttonClicked[0].clicked() == "EDIT_INTERVAL"):
-                return Edit("EDIT_INTERVAL", self.interval, self)
-            if (buttonClicked[0].clicked() == "EDIT_WAIT"):
-                return Edit("EDIT_WAIT", self.wait, self)
-            if (buttonClicked[0].clicked() == "DIRECTION"):
-                return Edit("DIRECTION", self.direction, self)
-            if (buttonClicked[0].clicked() == "MOVE_PLATFORM"):
-                return Edit("MOVE_PLATFORM", None, self)
+            elif (buttonClicked[0].clicked() == "GO_BACK"):
+                globals.globs["screens"].pop()
+            elif (buttonClicked[0].clicked() == "EDIT_SHOTS"):
+                globals.globs["screens"].append(Edit("EDIT_SHOTS", globals.globs["shots"], "shots"))
+            elif (buttonClicked[0].clicked() == "EDIT_INTERVAL"):
+                globals.globs["screens"].append(Edit("EDIT_INTERVAL", globals.globs["interval"], "interval"))
+            elif (buttonClicked[0].clicked() == "EDIT_WAIT"):
+                globals.globs["screens"].append(Edit("EDIT_WAIT", globals.globs["wait"], "wait"))
+            elif (buttonClicked[0].clicked() == "DIRECTION"):
+                globals.globs["screens"].append(Edit("DIRECTION", globals.globs["direction"], "direction"))
+            elif (buttonClicked[0].clicked() == "MOVE_PLATFORM"):
+                globals.globs["screens"].append(Edit("MOVE_PLATFORM", None, None))
                 
             print (buttonClicked[0].clicked())
         
-        
-    def goBack(self):
-        self.previous_screen.shots = self.shots
-        self.previous_screen.interval = self.interval
-        self.previous_screen.wait = self.wait
-        self.previous_screen.direction = self.direction
     
     def update(self):
         self.allsprites.update()
         
-        self.shots_label = self.myfont.render(  "Shots:    " + str(self.shots), 1, (0,0,0))
-        self.moving_label = self.myfont.render( "Interval: " + str(self.interval) + "ms", 1, (0,0,0))
-        self.waiting_label = self.myfont.render("Waiting:  " + str(self.wait) + "ms", 1, (0,0,0))
+        self.shots_label = self.myfont.render(  "Shots:    " + str(globals.globs["shots"]), 1, (0,0,0))
+        self.moving_label = self.myfont.render( "Interval: " + str(globals.globs["interval"]) + "ms", 1, (0,0,0))
+        self.waiting_label = self.myfont.render("Waiting:  " + str(globals.globs["wait"]) + "ms", 1, (0,0,0))
         
-        self.direction_label = self.myfont.render("Direction:  " + ("Left" if self.direction == 0 else "Right"), 1, (0,0,0))
+        self.direction_label = self.myfont.render("Direction:  " + ("Left" if globals.globs["direction"] == 0 else "Right"), 1, (0,0,0))
         self.move_platform_label = self.myfont.render("Move Platform", 1, (0,0,0))
         
         
@@ -104,12 +95,14 @@ class Settings:
 class Edit:
 
 
-    def __init__(self, type, value, settings_page):
+    def __init__(self, type, value, old_val):
         self.type = type
+        self.old_val = old_val
         self.value = value
-        self.settings_page = settings_page
         self.myfont = pygame.font.SysFont("monospace", 25)
         self.setButtons()
+        self.motor = False
+        self.GRID_LOCK = threading.Lock()
         
     def setButtons(self):
         if (self.type == "EDIT_SHOTS" or self.type == "EDIT_INTERVAL" or self.type == "EDIT_WAIT"):
@@ -170,29 +163,49 @@ class Edit:
                     temp = 0
                 self.value = int(temp)
             elif (buttonClicked[0].clicked() == "ENTER"):
+                self.stops()
                 self.goBack()
-                return self.settings_page
+                globals.globs["screens"].pop()
             elif (buttonClicked[0].clicked() == "CANCEL"):
-                return self.settings_page    
+                self.stops()
+                globals.globs["screens"].pop()  
             elif (buttonClicked[0].clicked() == "LEFT_DIR"):
                 self.value = 0
             elif (buttonClicked[0].clicked() == "RIGHT_DIR"):
                 self.value = 1
-                
+            elif (buttonClicked[0].clicked() == "MOVE_LEFT"):
+                if (globals.globs["allow_motion"] <= 0):
+                    globals.globs["motor_running"] = True
+                    #gpio.digitalWrite(globals.globs["motor_pins"]["A"],gpio.HIGH)
+            elif (buttonClicked[0].clicked() == "MOVE_RIGHT"):
+                if (globals.globs["allow_motion"] >= 0):
+                    globals.globs["motor_running"] = True
+                    #gpio.digitalWrite(globals.globs["motor_pins"]["B"],gpio.HIGH)
+            elif (buttonClicked[0].clicked() == "FAST_FORWARD"):
+                self.GRID_LOCK.acquire()
+                if (not self.motor and globals.globs["allow_motion"] >= 0):
+                    self.value = 1
+                    self.motor = True
+                    self.t = threading.Thread(target=self.moving)
+                    self.t.start()
+                self.GRID_LOCK.release()
+            elif (buttonClicked[0].clicked() == "REWIND"):
+                self.GRID_LOCK.acquire()
+                if (not self.motor and globals.globs["allow_motion"] <= 0):
+                    self.value = -1
+                    self.motor = True
+                    self.t = threading.Thread(target=self.moving)
+                    self.t.start()
+                self.GRID_LOCK.release()
+            elif (buttonClicked[0].clicked() == "STOP"):
+                self.GRID_LOCK.acquire()
+                self.motor = False
+                self.GRID_LOCK.release()
                 
     def goBack(self):
-        if (self.type == "EDIT_SHOTS"):
-            if (self.value > 0):
-                self.settings_page.shots = self.value
-        if (self.type == "EDIT_INTERVAL"):
-            if (self.value > 0):
-                self.settings_page.interval = self.value
-        if (self.type == "EDIT_WAIT"):
-            if (self.value > 0):
-                self.settings_page.wait = self.value
-        if (self.type == "DIRECTION"):
-            self.settings_page.direction = self.value
-            
+        if (self.type != None):
+                globals.globs[self.old_val] = self.value
+        
             
     def update(self):
         self.allsprites.update()   
@@ -201,8 +214,10 @@ class Edit:
             self.value_label = self.myfont.render(str(self.value), 1, (0,0,0))
         
     def stops(self):
-        pass    
-    
+        self.GRID_LOCK.acquire()
+        self.motor = False
+        self.GRID_LOCK.release()
+        
     def draw(self, screen):
         self.allsprites.draw(screen)
         
@@ -213,4 +228,25 @@ class Edit:
                 pygame.draw.rect(screen, (0,0,0), pygame.Rect((58,25), (80, 130)), 5)
             elif (self.value == 1):
                 pygame.draw.rect(screen, (0,0,0), pygame.Rect((182,25), (80, 130)), 5)
+                
+                
+    def moving(self):
+        if (self.value == -1):
+            pass
+            #gpio.digitalWrite(globals.globs["motor_pins"]["A"],gpio.HIGH)
+        elif (self.value == 1):
+            pass
+            #gpio.digitalWrite(globals.globs["motor_pins"]["B"],gpio.HIGH)
         
+        while (True):
+            self.GRID_LOCK.acquire()
+            if (not self.motor or (self.value == -1 and globals.globs["allow_motion"] > 0) or (self.value == 1 and globals.globs["allow_motion"] < 0)):
+                self.GRID_LOCK.release()
+                break
+            #just loops through and keeps checking if the wall switch is activated then stop motor
+            
+            self.GRID_LOCK.release()
+            
+        #gpio.digitalWrite(globals.globs["motor_pins"]["A"],gpio.LOW)    
+        #gpio.digitalWrite(globals.globs["motor_pins"]["B"],gpio.LOW)    
+            
