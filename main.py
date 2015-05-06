@@ -1,6 +1,7 @@
 #! /bin/python
 
 import pygame, signal, sys
+import wiringpi2
 #import RPi.GPIO as GPIO
 from datetime import datetime
 from mainScreen import MainScreen
@@ -37,15 +38,38 @@ clock = pygame.time.Clock()
 def signal_handler(signal, frame):
     global runs
     runs = 0
+    gpioCleanup()
     #GPIO.cleanup()
     while (len(globals.globs["screens"]) > 0):
         globals.globs["screens"].pop().stops()
         
     sys.exit(0)
+    
+def gpioCleanup():
+    gpio.digitalWrite(globals.globs["motor_pins"]["A"],gpio.LOW)
+    gpio.digitalWrite(globals.globs["motor_pins"]["B"],gpio.LOW)
+    
+    os.system("echo 'out' > /sys/class/gpio/gpio508/direction")
+    gpio.pinMode(globals.globs["motor_pins"]["A"],0)
+    gpio.pinMode(globals.globs["motor_pins"]["B"],0)
+    gpio.pinMode(globals.globs["trigger_pins"]["LEFT"],0)
+    gpio.pinMode(globals.globs["trigger_pins"]["RIGHT"],0)
+    gpio.pinMode(globals.globs["camera_pins"]["GROUND"],0)
+    gpio.pinMode(globals.globs["camera_pins"]["FOCUS"],0)
+    gpio.pinMode(globals.globs["camera_pins"]["SHUTTER"],0)
 
 def gpio_init():
     pass
-    #GPIO.setmode(GPIO.BOARD)
+    gpio = wiringpi2.GPIO(wiringpi2.GPIO.WPI_MODE_GPIO)  
+    ##GPIO.setmode(GPIO.BOARD)
+    os.system("echo 508 > /sys/class/gpio/export")
+    os.system("echo 'out' > /sys/class/gpio/gpio508/direction")
+    os.system("echo '1' > /sys/class/gpio/gpio508/value")
+    gpio.pinMode(globals.globs["motor_pins"]["A"],gpio.OUTPUT)
+    gpio.pinMode(globals.globs["motor_pins"]["B"],gpio.OUTPUT)
+    gpio.pinMode(globals.globs["trigger_pins"]["LEFT"],gpio.INPUT)
+    gpio.pinMode(globals.globs["trigger_pins"]["RIGHT"],gpio.INPUT)
+
     
 def triggering():
     while (runs):
@@ -66,7 +90,12 @@ gpio_init()
 while runs:
     clock.tick(60)
     
-    screen.fill((255,255,255))
+    #screen.fill((224,224,224))
+    img    = pygame.image.load("images/background.jpg")
+    screen.blit(img,
+    ((320 - img.get_width() ) / 2,
+     (240 - img.get_height()) / 2))
+    
     
     globals.globs["screens"][-1].update()
     globals.globs["screens"][-1].draw(screen)
@@ -85,11 +114,11 @@ while runs:
             if (globals.globs["motor_running"]):
                 globals.globs["motor_running"] = False
                 # Stop Motor
-                #gpio.digitalWrite(globals.globs["motor_pins"]["A"],gpio.LOW)
-                #gpio.digitalWrite(globals.globs["motor_pins"]["B"],gpio.LOW)
+                gpio.digitalWrite(globals.globs["motor_pins"]["A"],gpio.LOW)
+                gpio.digitalWrite(globals.globs["motor_pins"]["B"],gpio.LOW)
                 
                 
-    
+gpioCleanup    
 #GPIO.cleanup()    
 print("DONE")
 pygame.quit()
