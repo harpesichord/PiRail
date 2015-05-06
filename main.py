@@ -25,7 +25,7 @@ globals.globs["screens"] = []
 globals.globs["motor_running"] = False
 globals.globs["allow_motion"] = 0
 
-
+print("STARTED")
 pygame.font.init()
 screen = pygame.display.set_mode((320, 240), pygame.SRCALPHA)
 runs = 1
@@ -56,6 +56,7 @@ def triggering():
         #if anyside triggers stop motion.
         
 
+print("Showing")
 t = threading.Thread(target=triggering)
 t.start()
     
