@@ -3,6 +3,7 @@
 import pygame
 from button import Button
 import globals
+#import wiringpi2
 #import RPi.GPIO as GPIO
 import threading, os
 
@@ -233,10 +234,10 @@ class Edit:
     def moving(self):
         if (self.value == -1):
             pass
-            #gpio.digitalWrite(globals.globs["motor_pins"]["A"],gpio.HIGH)
+            gpio.digitalWrite(globals.globs["motor_pins"]["A"],gpio.HIGH)
         elif (self.value == 1):
             pass
-            #gpio.digitalWrite(globals.globs["motor_pins"]["B"],gpio.HIGH)
+            gpio.digitalWrite(globals.globs["motor_pins"]["B"],gpio.HIGH)
         
         while (True):
             self.GRID_LOCK.acquire()
@@ -247,6 +248,6 @@ class Edit:
             
             self.GRID_LOCK.release()
             
-        #gpio.digitalWrite(globals.globs["motor_pins"]["A"],gpio.LOW)    
-        #gpio.digitalWrite(globals.globs["motor_pins"]["B"],gpio.LOW)    
+        gpio.digitalWrite(globals.globs["motor_pins"]["A"],gpio.LOW)    
+        gpio.digitalWrite(globals.globs["motor_pins"]["B"],gpio.LOW)    
             

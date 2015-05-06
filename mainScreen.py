@@ -1,6 +1,7 @@
 #! /bin/python
 
 import pygame, time, datetime
+import wiringpi2
 #import RPi.GPIO as GPIO
 from button import Button
 from settings import Settings
@@ -99,9 +100,14 @@ class Pictures(threading.Thread):
             else:
                 time.sleep(globals.globs["interval"] / 1000)
             
-            # Take Picture
-            #os.system('python take_picture.py ' + str(globals.globs["camera_pins"]["GROUND"]) + ' ' + str(globals.globs["camera_pins"]["FOCUS"]) + ' ' + str(globals.globs["camera_pins"]["SHUTTER"]) + ' ' + str(globals.globs["SHUTTER_WAIT"]))
+            #Turn off backlight
+            os.system("echo '0' > /sys/class/gpio/gpio508/value")
             
+            # Take Picture
+            os.system('python take_pic.py ' + str(globals.globs["camera_pins"]["GROUND"]) + ' ' + str(globals.globs["camera_pins"]["FOCUS"]) + ' ' + str(globals.globs["camera_pins"]["SHUTTER"]) + ' ' + str(globals.globs["SHUTTER_WAIT"]))
+            
+            #Turn on backlight
+            os.system("echo '1' > /sys/class/gpio/gpio508/value")
             
             # Wait
             time.sleep(globals.globs["wait"] / 1000)
