@@ -101,13 +101,14 @@ class Pictures(threading.Thread):
                 time.sleep(globals.globs["interval"] / 1000)
             
             #Turn off backlight
-            os.system("echo '0' > /sys/class/gpio/gpio508/value")
+            os.system("echo '0' > /sys/class/gpio/gpio282/value")
             
             # Take Picture
-            os.system('python take_pic.py ' + str(globals.globs["camera_pins"]["GROUND"]) + ' ' + str(globals.globs["camera_pins"]["FOCUS"]) + ' ' + str(globals.globs["camera_pins"]["SHUTTER"]) + ' ' + str(globals.globs["SHUTTER_WAIT"]))
+            self.takePic(globals.globs["camera_pins"]["GROUND"], globals.globs["camera_pins"]["FOCUS"], globals.globs["camera_pins"]["SHUTTER"], globals.globs["SHUTTER_WAIT"])
+            #os.system('python take_pic.py ' + str(globals.globs["camera_pins"]["GROUND"]) + ' ' + str(globals.globs["camera_pins"]["FOCUS"]) + ' ' + str(globals.globs["camera_pins"]["SHUTTER"]) + ' ' + str(globals.globs["SHUTTER_WAIT"]))
             
             #Turn on backlight
-            os.system("echo '1' > /sys/class/gpio/gpio508/value")
+            os.system("echo '1' > /sys/class/gpio/gpio282/value")
             
             # Wait
             time.sleep(globals.globs["wait"] / 1000)
@@ -122,3 +123,14 @@ class Pictures(threading.Thread):
             
             GRID_LOCK.release()
         
+
+    def takePic(self, GROUND, FOCUS, SHUTTER, shutter_speed):
+        gpio.digitalWrite(GROUND, gpio.HIGH)
+        gpio.digitalWrite(FOCUS, gpio.HIGH)
+        gpio.digitalWrite(SHUTTER, gpio.HIGH)
+
+        time.sleep(shutter_speed / 1000)
+
+        gpio.digitalWrite(GROUND, gpio.LOW)
+        gpio.digitalWrite(FOCUS, gpio.LOW)
+        gpio.digitalWrite(SHUTTER, gpio.LOW)
