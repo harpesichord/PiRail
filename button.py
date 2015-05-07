@@ -1,35 +1,68 @@
-#! /bin/python
+import wiringpi2
+import atexit
+import cPickle as pickle
+import errno
+import fnmatch
+import io
+import os
+import pygame
+import threading
+import signal
+import sys
 
-import pygame, os, sys
 from pygame.locals import *
+from subprocess import call  
+from time import sleep
+from datetime import datetime, timedelta
 
-class Button(pygame.sprite.Sprite):
+class Button:
 
-    def __init__(self, image, position, text):
-        pygame.sprite.Sprite.__init__(self) #call Sprite intializer
-        self.image, self.rect = self.load_image(image, 255)
-        screen = pygame.display.get_surface()
-        self.area = screen.get_rect()
-        self.rect.topleft = position
-        self.text = text
-        
-    def update(self):
-        t = 1
-        
-    def clicked(self):
-        #if (self.rect.colliderect(pos)):
-        return self.text
-            
-    def load_image(self, name, colorkey=None):
-        fullname = os.path.join('images', name)
-        try:
-            image = pygame.image.load(fullname)
-        except pygame.error:
-            print ('Cannot load image:', name)
-            raise SystemExit
-        image = image.convert()
-        if colorkey is not None:
-            if colorkey is -1:
-                colorkey = image.get_at((0,0))
-            image.set_colorkey(colorkey, RLEACCEL)
-        return image, image.get_rect()
+	def __init__(self, rect, **kwargs):
+        self.rect     = rect # Bounds
+        self.color    = None # Background fill color, if any
+        self.iconBg   = None # Background Icon (atop color fill)
+        self.iconFg   = None # Foreground Icon (atop background)
+        self.bg       = None # Background Icon name
+        self.fg       = None # Foreground Icon name
+        self.callback = None # Callback function
+        self.value    = None # Value passed to callback
+        for key, value in kwargs.iteritems():
+            if   key == 'color': self.color    = value
+            elif key == 'bg'   : self.bg       = value
+            elif key == 'fg'   : self.fg       = value
+            elif key == 'cb'   : self.callback = value
+            elif key == 'value': self.value    = value
+
+	def selected(self, pos):
+        x1 = self.rect[0]
+        y1 = self.rect[1]
+        x2 = x1 + self.rect[2] - 1
+        y2 = y1 + self.rect[3] - 1
+        if ((pos[0] >= x1) and (pos[0] <= x2) and
+          (pos[1] >= y1) and (pos[1] <= y2)):
+            if self.callback:
+                if self.value is None: self.callback()
+                else:                  self.callback(self.value)
+                return True
+            return False
+
+	def draw(self, screen):
+        if self.color:
+            screen.fill(self.color, self.rect)
+        if self.iconBg:
+            screen.blit(self.iconBg.bitmap,
+              (self.rect[0]+(self.rect[2]-self.iconBg.bitmap.get_width())/2,
+              self.rect[1]+(self.rect[3]-self.iconBg.bitmap.get_height())/2))
+        if self.iconFg:
+            screen.blit(self.iconFg.bitmap,
+                (self.rect[0]+(self.rect[2]-self.iconFg.bitmap.get_width())/2,
+                self.rect[1]+(self.rect[3]-self.iconFg.bitmap.get_height())/2))
+
+    def setBg(self, name):
+        if name is None:
+            self.iconBg = None
+        else:
+            for i in icons:
+                if name == i.name:
+                    self.iconBg = i
+                break
