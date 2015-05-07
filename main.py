@@ -26,12 +26,6 @@ globals.globs["screens"] = []
 globals.globs["motor_running"] = False
 globals.globs["allow_motion"] = 0
 
-os.putenv('SDL_VIDEODRIVER', 'fbcon')
-os.putenv('SDL_FBDEV'      , '/dev/fb1')
-os.putenv('SDL_MOUSEDRV'   , 'TSLIB')
-os.putenv('SDL_MOUSEDEV'   , '/dev/input/touchscreen')
-
-
 
 def signal_handler(signal, frame):
     global runs
@@ -63,10 +57,11 @@ def gpio_init():
     #os.system("echo 252 > /sys/class/gpio/export")
     #os.system("echo 'out' > /sys/class/gpio/gpio252/direction")
     #os.system("echo '1' > /sys/class/gpio/gpio252/value")
-    gpio.pinMode(globals.globs["motor_pins"]["A"],gpio.OUTPUT)
-    gpio.pinMode(globals.globs["motor_pins"]["B"],gpio.OUTPUT)
-    gpio.pinMode(globals.globs["trigger_pins"]["LEFT"],gpio.INPUT)
-    gpio.pinMode(globals.globs["trigger_pins"]["RIGHT"],gpio.INPUT)
+    
+    #gpio.pinMode(globals.globs["motor_pins"]["A"],gpio.OUTPUT)
+    #gpio.pinMode(globals.globs["motor_pins"]["B"],gpio.OUTPUT)
+    #gpio.pinMode(globals.globs["trigger_pins"]["LEFT"],gpio.INPUT)
+    #gpio.pinMode(globals.globs["trigger_pins"]["RIGHT"],gpio.INPUT)
     gpio.pinMode(globals.globs["camera_pins"]["GROUND"],gpio.OUTPUT)
     gpio.pinMode(globals.globs["camera_pins"]["FOCUS"],gpio.OUTPUT)
     gpio.pinMode(globals.globs["camera_pins"]["SHUTTER"],gpio.OUTPUT)
@@ -81,14 +76,19 @@ def triggering():
         #if anyside triggers stop motion.
         
 
+os.putenv('SDL_VIDEODRIVER', 'fbcon')
+os.putenv('SDL_FBDEV'      , '/dev/fb1')
+os.putenv('SDL_MOUSEDRV'   , 'TSLIB')
+os.putenv('SDL_MOUSEDEV'   , '/dev/input/touchscreen')
 
 print("STARTED")
 gpio_init()
 pygame.init()
 pygame.font.init()
+pygame.mouse.set_visible(False)
 modes = pygame.display.list_modes(16)
 #screen = pygame.display.set_mode(modes[0], FULLSCREEN, 16)
-pygame.mouse.set_visible(False)
+
 screen = pygame.display.set_mode((320, 240), pygame.SRCALPHA)
 runs = 1
 main = MainScreen()
@@ -105,7 +105,7 @@ t.start()
 signal.signal(signal.SIGINT, signal_handler)
 
 while runs:
-    clock.tick(60)
+    clock.tick(30)
     
     #screen.fill((224,224,224))
     img    = pygame.image.load("images/background.jpg")
