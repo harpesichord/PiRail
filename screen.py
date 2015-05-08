@@ -18,8 +18,6 @@ from datetime import datetime, timedelta
 pygame.font.init()
 myfont = None
 
-pygame.font.SysFont("monospace", 25)
-
 # Screen is a screen for the game that will display buttons and text.  Each has:
 #  - optional font type to use
 #  - optional font size to use
