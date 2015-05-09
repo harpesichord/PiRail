@@ -52,12 +52,12 @@ class Pictures(threading.Thread):
                 
             # Start Moving
             controlMotor(True)
-            sleep(values["pulse"] / 1000)
+            sleep(float(values["pulse"]) / 1000)
             # Stop Moving
             controlMotor(False)
            
             #settling Time
-            sleep(values["settling"] / 1000)
+            sleep(float(values["settling"]) / 1000)
             
             #Turn off backlight
             #os.system("echo '0' > /sys/class/gpio/gpio252/value")
@@ -70,7 +70,7 @@ class Pictures(threading.Thread):
             
             # Interval
             if (values["interval"] > values["shutterSpeed"]):
-                sleep((values["interval"] - values["shutterSpeed"]) / 1000)
+                sleep(float(values["interval"] - values["shutterSpeed"]) / 1000)
             
             shotNumber += 1
             
@@ -188,7 +188,7 @@ def takePic():
     #gpio.digitalWrite(pins["FOCUS"], gpio.HIGH)
     #gpio.digitalWrite(pins["SHUTTER"], gpio.HIGH)
     
-    sleep(values["shutterSpeed"] / 1000)
+    sleep(float(values["shutterSpeed"]) / 1000)
     
     #gpio.digitalWrite(pins["GROUND"], gpio.LOW)
     #gpio.digitalWrite(pins["FOCUS"], gpio.LOW)
