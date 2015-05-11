@@ -82,12 +82,12 @@ class Pictures(threading.Thread):
 
 def createScreens():
     global screens
-    screens["main"] = Screen()
-    screens["settings1"] = Screen()
-    screens["settings2"] = Screen()
-    screens["numberEdit"] = Screen()
-    screens["directionEdit"] = Screen()
-    screens["movePlatformEdit"] = Screen()
+    screens["main"] = Screen(background="background.jpg")
+    screens["settings1"] = Screen(background="background.jpg")
+    screens["settings2"] = Screen(background="background.jpg")
+    screens["numberEdit"] = Screen(background="background.jpg")
+    screens["directionEdit"] = Screen(background="background.jpg")
+    screens["movePlatformEdit"] = Screen(background="background.jpg")
     
 def createButtons():
     global screens

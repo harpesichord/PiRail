@@ -40,6 +40,9 @@ class Screen:
             elif key == 'background' : self.background = value
             
         myfont = pygame.font.SysFont(fontType, fontSize)
+        
+        if isinstance(self.background, str):
+            self.backImg = pygame.image.load("images/" + self.background)
     
     def addButtons(self, buttons):
         self.buttons = buttons
@@ -66,12 +69,12 @@ class Screen:
         self.texts[text].setText(value)
         
     def draw(self, screen):
-        if isinstance(self.background, tuple): # Letterbox, clear background
+        if not isinstance(self.background, str): # Letterbox, clear background
             screen.fill(self.background)
         else:
-            screen.blit(self.background,
-                ((320 - self.background.get_width() ) / 2,
-                (240 - self.background.get_height()) / 2))
+            screen.blit(self.backImg,
+                ((320 - self.backImg.get_width() ) / 2,
+                (240 - self.backImg.get_height()) / 2))
         
         for i,b in enumerate(self.buttons.values()):
             b.draw(screen)
