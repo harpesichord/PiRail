@@ -26,6 +26,7 @@ class Screen:
     
     buttons = {}
     texts = {}
+    shapes = {}
     
     def __init__(self, **kwargs):
         global myfont
@@ -45,12 +46,18 @@ class Screen:
             
     def addTexts(self, texts):
         self.texts = texts
+        
+    def addShapes(self, shapes):
+        self.shapes = shapes
             
     def addButton(self, key, button):
         self.buttons[key] = button
         
     def addText(self, key, text):
         self.texts[key] = text
+    
+    def addShape(self, key, shape):
+        self.shapes[key] = shape
         
     def setBackground(self, background):
         self.background = background
@@ -70,7 +77,8 @@ class Screen:
             b.draw(screen)
         for i,t in enumerate(self.texts.values()):
             t.draw(screen)
-        
+        for i,s in enumerate(self.shapes.values()):
+            s.draw(screen)
         
     def update(self):
         for i,t in enumerate(self.texts.values()):
@@ -80,7 +88,26 @@ class Screen:
     
     
     
-    
+class Shapes:
+    def __init__(self, rect, **kwargs):
+        self.rect = rect # Bounds
+        self.color    = (0,0,0) # Background fill color, if any
+        self.width = 0
+        for key, value in kwargs.items():
+            if   key == 'color': self.color    = value
+            elif key == 'width': self.width    = value
+
+    def setPosition(self, rect):
+        self.rect = rect
+        
+    def setColor(self, color):
+        self.color = color
+        
+    def setWidth(self, width):
+        self.width = width
+        
+    def draw(self, screen):
+        pygame.draw.rect(screen, self.color, self.rect, self.width)
     
     
     
