@@ -17,7 +17,7 @@ from pygame.locals import *
 from subprocess import call  
 from time import sleep
 from datetime import datetime, timedelta
-from screen import Screen, Button, Text
+from screen import Screen, Button, Text, Shapes
 
 # Icon is a very simple bitmap class, just associates a name and a pygame
 # image (PNG loaded from icons directory) for each.
@@ -41,7 +41,7 @@ class Pictures(threading.Thread):
         
         
     def run(self):
-        global takingPics, GRID_LOCK, shotNumber, values
+        global takingPics, GRID_LOCK, shotNumber, values, direction
         
         while True:
             GRID_LOCK.acquire()
@@ -51,10 +51,10 @@ class Pictures(threading.Thread):
                 
                 
             # Start Moving
-            controlMotor(True)
+            controlMotor(True, direction)
             sleep(float(values["pulse"]) / 1000)
             # Stop Moving
-            controlMotor(False)
+            controlMotor(False, direction)
            
             #settling Time
             sleep(float(values["settling"]) / 1000)
@@ -82,10 +82,12 @@ class Pictures(threading.Thread):
 
 def createScreens():
     global screens
-    screens["main"] = Screen()
-    screens["settings1"] = Screen()
-    screens["settings2"] = Screen()
-    screens["numberEdit"] = Screen()
+    screens["main"] = Screen(background="background.jpg")
+    screens["settings1"] = Screen(background="background.jpg")
+    screens["settings2"] = Screen(background="background.jpg")
+    screens["numberEdit"] = Screen(background="background.jpg")
+    screens["directionEdit"] = Screen(background="background.jpg")
+    screens["movePlatformEdit"] = Screen(background="background.jpg")
     
 def createButtons():
     global screens
@@ -102,6 +104,13 @@ def createButtons():
         "edit3": Button((265,115,50,50), cb=numberEdit, value = 3, bg='edit'),
         "goback": Button((5,185,100,50), cb=changePageTouch, value = 0, bg='go_back'),
         "next": Button((265,185,50,50), cb=changePageTouch, value = 2, bg='right')
+    })
+    
+    screens["settings2"].addButtons({
+        "edit1": Button((265,5,50,50), cb=directionEdit, value = 0, bg='edit'),
+        "edit2": Button((265,60,50,50), cb=movePlatformEdit, value = 0, bg='edit'),
+        "goback": Button((5,185,100,50), cb=changePageTouch, value = 0, bg='go_back'),
+        "prev": Button((210,185,50,50), cb=changePageTouch, value = 1, bg='left')
     })
     
     screens["numberEdit"].addButtons({
@@ -121,6 +130,23 @@ def createButtons():
         "textbox": Button((0,0,320,50), bg='textbox')
     })
     
+    screens["directionEdit"].addButtons({
+        "left": Button((73,40,50,100), cb=directionEdit, value = 1, bg='left_dir'),
+        "right": Button((197,40,50,100), cb=directionEdit, value = 2, bg='right_dir'),
+        "enter": Button((5,185,100,50), cb=directionEdit, value = 3, bg='enter'),
+        "cancel": Button((210,185,50,50), cb=directionEdit, value = 4, bg='cancel')
+    })
+    
+    screens["movePlatformEdit"].addButtons({
+        "rewind": Button((80,37,50,50), cb=movePlatformEdit, value = 1, bg='rewind'),
+        "fastforward": Button((190,37,50,50), cb=movePlatformEdit, value = 2, bg='fastforward'),
+        "left": Button((80,92,50,50), cb=movePlatformEdit, value = 3, bg='left'),
+        "right": Button((190,92,50,50), cb=movePlatformEdit, value = 4, bg='right'),
+        "enter": Button((5,185,100,50), cb=movePlatformEdit, value = 5, bg='enter'),
+        "stop": Button((110,185,100,50), cb=movePlatformEdit, value = 6, bg='stop')
+    })
+    
+    
 def createText():
     global screens
     
@@ -139,12 +165,21 @@ def createText():
         #"shutterSpeed": Text("",(5, 145))
     })
     
+    screens["settings2"].addTexts({
+        "direction": Text("",(5, 20)),
+        "move": Text("",(5, 70))
+    })
+    
     screens["numberEdit"].addTexts({
         "value": Text("",(5, 10))
     })
+    
+    screens["directionEdit"].addShapes({
+        "directionBox": Shapes(pygame.Rect((58,25), (80, 130)),width=5)
+    })
 
 def updateText(screen):
-    global shotNumber, timeRemaining, values
+    global shotNumber, timeRemaining, values, direction
     
     if screen == "main":
         screens["main"].setText("moving", "Moving: " + str(values["pulse"]) + "ms")
@@ -157,15 +192,20 @@ def updateText(screen):
         screens["settings1"].setText("interval",     "Interval: " + str(values["interval"]) + "ms")
         #screens["settings1"].setText("settling",     "Settling      : " + str(values["settling"]) + "ms")
         #screens["settings1"].setText("shutterSpeed", "Shutter Speed : " + str(values["shutterSpeed"]) + "ms")
+    elif screen == "settings2":
+        screens["settings2"].setText("direction",        "Direction:  " + ("Left" if direction == 0 else "Right"))
+        screens["settings2"].setText("move",        "Move Platform")
     elif screen == "numberEdit":
         screens["numberEdit"].setText("value", str(numberString))
- 
+    elif screen == "directionEdit":
+        screens["directionEdit"].shapes["directionBox"].setPosition(pygame.Rect((58,25), (80, 130)) if direction == 0 else pygame.Rect((182,25), (80, 130)))
+        
 
-def controlMotor(moving):
+def controlMotor(moving, direction):
     global pins, motorRunning, allowMotion
     
     motorRunning = moving
-    print("Moving: " + str(moving))
+    print("Moving: " + ("Left - " if direction == 0 else "Right - ") + str(moving))
     
     if moving:
         if ((direction == 0 and allowMotion <= 0)):
@@ -213,6 +253,8 @@ def startTouch(n):
         
 def changePageTouch(n):
     global currentScreen, takingPics, returnScreen
+    
+    
     if n == 0:
         currentScreen = "main"
     elif n == 1 and not takingPics:
@@ -220,9 +262,50 @@ def changePageTouch(n):
     elif n == 2:
         currentScreen = "settings2"
         
+def directionEdit(n):
+    global currentScreen, returnScreen, direction, numberString
+    
+    if n == 0:
+        returnScreen = currentScreen
+        currentScreen = "directionEdit"
+        numberString = direction
+    if n == 1:
+        direction = 0
+    elif n == 2:
+        direction = 1
+    elif n == 3:
+        currentScreen = returnScreen
+    elif n == 4:
+        direction = numberString
+        currentScreen = returnScreen
+        
 def editEnd(n):
     global currentScreen, returnScreen
     currentScreen = returnScreen
+    
+def movePlatformEdit(n):
+    global currentScreen, returnScreen, GRID_LOCK, motorRunning, allowMotion, stopMotion
+    
+    if n == 0:
+        returnScreen = currentScreen
+        currentScreen = "movePlatformEdit"
+    if n == 1:
+        controlMotor(False, 0)
+        controlMotor(True, 0)
+    elif n == 2:
+        controlMotor(False, 0)
+        controlMotor(True, 1)
+    elif n == 3:
+        stopMotion = True
+        controlMotor(True, 0)
+    elif n == 4:
+        stopMotion = True
+        controlMotor(True, 1)
+    elif n == 5:
+        controlMotor(False, 0)
+        currentScreen = returnScreen
+    elif n == 6:
+        controlMotor(False, 0)
     
 def numberEnter(n):
     global currentScreen, returnScreen
@@ -281,6 +364,7 @@ timeRemaining = 0
 direction = 1
 screens = {}
 motorRunning = False
+stopMotion = False
 allowMotion = 0
 iconPath        = 'images'
 icons = [] # This list gets populated at startup
@@ -419,7 +503,9 @@ while runs:
             for b in screens[currentScreen].buttons.values():
                 if b.selected(pos): break
         elif(event.type is MOUSEBUTTONUP):
-            motorRunning = False
+            if stopMotion:
+                stopMotion = False
+                controlMotor(False, 0)
         
         
         

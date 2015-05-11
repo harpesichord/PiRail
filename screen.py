@@ -26,6 +26,7 @@ class Screen:
     
     buttons = {}
     texts = {}
+    shapes = {}
     
     def __init__(self, **kwargs):
         global myfont
@@ -39,18 +40,27 @@ class Screen:
             elif key == 'background' : self.background = value
             
         myfont = pygame.font.SysFont(fontType, fontSize)
+        
+        if isinstance(self.background, str):
+            self.backImg = pygame.image.load("images/" + self.background)
     
     def addButtons(self, buttons):
         self.buttons = buttons
             
     def addTexts(self, texts):
         self.texts = texts
+        
+    def addShapes(self, shapes):
+        self.shapes = shapes
             
     def addButton(self, key, button):
         self.buttons[key] = button
         
     def addText(self, key, text):
         self.texts[key] = text
+    
+    def addShape(self, key, shape):
+        self.shapes[key] = shape
         
     def setBackground(self, background):
         self.background = background
@@ -59,18 +69,19 @@ class Screen:
         self.texts[text].setText(value)
         
     def draw(self, screen):
-        if isinstance(self.background, tuple): # Letterbox, clear background
+        if not isinstance(self.background, str): # Letterbox, clear background
             screen.fill(self.background)
         else:
-            screen.blit(self.background,
-                ((320 - self.background.get_width() ) / 2,
-                (240 - self.background.get_height()) / 2))
+            screen.blit(self.backImg,
+                ((320 - self.backImg.get_width() ) / 2,
+                (240 - self.backImg.get_height()) / 2))
         
         for i,b in enumerate(self.buttons.values()):
             b.draw(screen)
         for i,t in enumerate(self.texts.values()):
             t.draw(screen)
-        
+        for i,s in enumerate(self.shapes.values()):
+            s.draw(screen)
         
     def update(self):
         for i,t in enumerate(self.texts.values()):
@@ -80,7 +91,26 @@ class Screen:
     
     
     
-    
+class Shapes:
+    def __init__(self, rect, **kwargs):
+        self.rect = rect # Bounds
+        self.color    = (0,0,0) # Background fill color, if any
+        self.width = 0
+        for key, value in kwargs.items():
+            if   key == 'color': self.color    = value
+            elif key == 'width': self.width    = value
+
+    def setPosition(self, rect):
+        self.rect = rect
+        
+    def setColor(self, color):
+        self.color = color
+        
+    def setWidth(self, width):
+        self.width = width
+        
+    def draw(self, screen):
+        pygame.draw.rect(screen, self.color, self.rect, self.width)
     
     
     
