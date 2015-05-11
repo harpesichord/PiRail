@@ -261,9 +261,9 @@ def numberEdit(n):
 
     numberString = values[currentEdit]
     
-pins = {"GROUND"    : 15, #White
-        "FOCUS"     : 11, #Yellow
-        "SHUTTER"   : 13, #RED
+pins = {"GROUND"    : 15, #White #Ground #P6
+        "FOCUS"     : 11, #Yellow #Ground #P20
+        "SHUTTER"   : 27, #RED #P13 #GPIO27
         "motorA"    : 0,
         "motorB"    : 0,
         "leftTrig"  : 0,
